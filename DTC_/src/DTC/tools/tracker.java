@@ -1,10 +1,10 @@
-package DCT.tools;
+package DTC.tools;
 
 import java.awt.Color;
 import java.util.ArrayList;
 
-import DCT.tools.dataHandler.PointSerie;
-import DCT.tools.individualData.Point;
+import DTC.tools.dataHandler.PointSerie;
+import DTC.tools.individualData.Point;
 import ij.ImagePlus;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;

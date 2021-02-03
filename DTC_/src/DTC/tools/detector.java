@@ -1,4 +1,4 @@
-package DCT.tools;
+package DTC.tools;
 
 
 import java.awt.Color;
@@ -6,8 +6,8 @@ import java.awt.Polygon;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import DCT.tools.dataHandler.PointSerie;
-import DCT.tools.utilities.utilities;
+import DTC.tools.dataHandler.PointSerie;
+import DTC.tools.utilities.utilities;
 import ij.CompositeImage;
 import ij.ImagePlus;
 import ij.gui.OvalRoi;
@@ -251,7 +251,7 @@ public class detector {
 			Arrays.fill(intensities, Float.NaN);
 			
 			out=new PointSerie((PointRoi) pointRoi, intensities);
-			if(color!=null) roi.setStrokeColor(color);
+			if(color!=null) pointRoi.setStrokeColor(color);
 			pointRoi=RoiEnlarger.enlarge(pointRoi, radius*1.1);
 			ov.add(pointRoi);
 		}

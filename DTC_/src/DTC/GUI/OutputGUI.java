@@ -1,16 +1,19 @@
-package DCT.GUI;
+package DTC.GUI;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
-import DCT.tools.detector;
-import DCT.tools.tracker;
-import DCT.tools.dataHandler.PointSerie;
+
 import ij.ImagePlus;
 import ij.plugin.frame.RoiManager;
 
 import javax.swing.SpringLayout;
+
+import DTC.tools.detector;
+import DTC.tools.tracker;
+import DTC.tools.dataHandler.PointSerie;
+
 import javax.swing.JCheckBox;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;

@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import DCT.GUI.GUIPanel;
-import DCT.GUI.OutputGUI;
-import DCT.tools.colocalizer;
-import DCT.tools.detector;
-import DCT.tools.tracker;
-import DCT.tools.dataHandler.PointSerie;
+import DTC.GUI.GUIPanel;
+import DTC.GUI.OutputGUI;
+import DTC.tools.colocalizer;
+import DTC.tools.detector;
+import DTC.tools.tracker;
+import DTC.tools.dataHandler.PointSerie;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -28,7 +28,7 @@ import ij.process.ImageProcessor;
  * @author fab
  *
  */
-public class DCT_ implements ExtendedPlugInFilter, DialogListener, ChangeListener{
+public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListener{
 	private int flags = DOES_ALL|CONVERT_TO_FLOAT;
 	
 	int[][] params=null;

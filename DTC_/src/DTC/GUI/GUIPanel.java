@@ -1,4 +1,4 @@
-package DCT.GUI;
+package DTC.GUI;
 
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
