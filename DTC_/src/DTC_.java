@@ -11,6 +11,7 @@ import DTC.tools.detector;
 import DTC.tools.tracker;
 import DTC.tools.dataHandler.PointSerie;
 import ij.IJ;
+import ij.ImageListener;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.DialogListener;
@@ -28,7 +29,7 @@ import ij.process.ImageProcessor;
  * @author fab
  *
  */
-public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListener{
+public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListener, ImageListener{
 	private int flags = DOES_ALL|CONVERT_TO_FLOAT;
 	
 	int[][] params=null;
@@ -37,6 +38,9 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	GenericDialog gd=null;
 	GUIPanel gpl=null;
 	
+	boolean eventConsumed=false;
+	
+	@SuppressWarnings("static-access")
 	@Override
 	public int setup(String arg, ImagePlus imp) {
 		if(imp==null) {
@@ -49,6 +53,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 			return DONE;
 		}
 		
+		imp.setOverlay(null);
 		imp.setC(1);
 		IJ.run(imp, "Red", "");
 		imp.setC(2);
@@ -59,9 +64,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	
 	@Override
 	public void run(ImageProcessor ip) {
-		if(gd.isVisible()) {
-			preview();
-		}
+		if(gd.isVisible()) preview();
 		//Nothing more to add: otherwise will loop for all the individual slices
 	}
 
@@ -69,6 +72,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 		this.pfr=pfr;
 		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v1.0.0 21-02-01");
+		gd.setModal(false);
 		gd.setResizable(false);
 		gpl= new GUIPanel();
 		gd.add(gpl);
@@ -82,12 +86,6 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 		
 		gd.showDialog();
 		
-		if(gd.wasOKed()) {
-			params=gpl.getValues();
-			gpl.storePreferences();
-			process();
-		}
-		
 		return IJ.setupDialog(imp, flags);
 	}
 
@@ -100,37 +98,42 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	 * This function allows previewing the effects of the current parameters on detection and co-localization
 	 */
 	public void preview() {
-		params=gpl.getValues();
-		
-		//Preview
-		ImagePlus imp=WindowManager.getCurrentImage();
-		
-		PointSerie[] prevDetections=new PointSerie[2];
-		
-		imp.setOverlay(null);
-		
-		//Get only the current timepoint
-		Roi roi=imp.getRoi();
-		imp.killRoi();
-		
-		ImagePlus previewIp=new Duplicator().run(imp, 1, 2, 1, 1, imp.getFrame(), imp.getFrame());
-				
-		//Preview detections
-		for(int i=0; i<2; i++) {
-			previewIp.setC(i+1);
-			detector.setParameters(params[i][0], params[i][1], params[i][2]==1, 0, detector.COLORS[i], true);
-			previewIp.setRoi(roi);
-			prevDetections[i]=detector.previewDetections(previewIp, roi);
+		if(gd.isPreviewActive()) {
+			params=gpl.getValues();
+			
+			//Preview
+			ImagePlus imp=WindowManager.getCurrentImage();
+			imp.removeImageListener(this);
+			
+			PointSerie[] prevDetections=new PointSerie[2];
+			
+			imp.setOverlay(null);
+			
+			//Get only the current timepoint
+			Roi roi=imp.getRoi();
+			imp.killRoi();
+			
+			ImagePlus previewIp=new Duplicator().run(imp, 1, 2, 1, 1, imp.getFrame(), imp.getFrame());
+					
+			//Preview detections
+			for(int i=0; i<2; i++) {
+				previewIp.setC(i+1);
+				detector.setParameters(params[i][0], params[i][1], params[i][2]==1, 0, detector.COLORS[i], true);
+				previewIp.setRoi(roi);
+				prevDetections[i]=detector.previewDetections(previewIp, roi);
+			}
+			
+			//Transfer overlay from the preview to the actual image
+			Overlay ov=previewIp.getOverlay();
+			imp.setOverlay(ov);
+			imp.setRoi(roi);
+			
+			//Preview colocalization
+			colocalizer.setParameters(params[2][0], params[2][1]);
+			colocalizer.previewColoc(prevDetections[0], prevDetections[1], new double[]{params[0][0], params[1][0]});
+			
+			imp.addImageListener(this);
 		}
-		
-		//Transfer overlay from the preview to the actual image
-		Overlay ov=previewIp.getOverlay();
-		imp.setOverlay(ov);
-		imp.setRoi(roi);
-		
-		//Preview colocalization
-		colocalizer.setParameters(params[2][0], params[2][1]);
-		colocalizer.previewColoc(prevDetections[0], prevDetections[1], new double[]{params[0][0], params[1][0]});
 	}
 	
 	/**
@@ -168,6 +171,12 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	
 	@Override
 	public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
+		if(gd.wasOKed()) {
+			params=gpl.getValues();
+			gpl.storePreferences();
+			process();
+		}
+		
 		return true;
 	}
 	
@@ -187,5 +196,27 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 		out+="proximity="+params[2][0]+" coloc="+params[2][1];
 		
 		return out;
+	}
+
+	@Override
+	public void imageClosed(ImagePlus imp) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void imageOpened(ImagePlus imp) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void imageUpdated(ImagePlus imp) {
+		// TODO Auto-generated method stub
+		
+		if(imp!=null && gd.isVisible()) {
+			if(gd.getPreviewCheckbox().getState()) preview();
+		}
+		
 	}
 }

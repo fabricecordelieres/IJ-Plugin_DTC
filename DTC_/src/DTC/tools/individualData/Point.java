@@ -15,7 +15,7 @@ public class Point {
 	public float y=Float.NaN;
 	
 	/** Intensity **/
-	float intensity=Float.NaN;
+	public float intensity=Float.NaN;
 	
 	
 	/** Tag **/
@@ -90,7 +90,14 @@ public class Point {
 	
 	@Override
 	public String toString(){
-		return " x="+x+" y="+y+" intensity="+intensity+" tag="+tag;
+		//JSON-like formatted output
+		String out="\t\t\t\"Point\": {\n";
+		out+="\t\t\t\t\"X\": "+x+",\n";
+		out+="\t\t\t\t\"Y\": "+y+",\n";
+		out+="\t\t\t\t\"Intensity\": "+intensity+"\n";
+		out+="\t\t\t}\n";
+		
+		return out;
 	}
 	
 	public Point clone() {

@@ -10,6 +10,7 @@ import DTC.tools.dataHandler.PointSerie;
 import DTC.tools.utilities.utilities;
 import ij.CompositeImage;
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.gui.OvalRoi;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
@@ -48,6 +49,18 @@ public class detector {
 	
 	/** If true, enlarges output ROIs of a radius equal to the filtering radius **/ 
 	public static boolean doEnlarge=false;
+	
+	/** If true, the image is zoomed in when clicking on one detection **/
+	static boolean doZoomIn=false;
+	
+	/** If doZoomIn is true, the magnification to be used when zooming in **/
+	static int zoomInValue=100;
+	
+	/** The line width for tracks display **/
+	static int lineWidth=1;
+	
+	// The circular ROI's radius when displaying individual detections **/
+	static int roiRadius=2;
 	
 	/** Setting to add ROIs to RoiManager as crosses **/
 	public static final int CROSS=0;
@@ -310,6 +323,7 @@ public class detector {
 				if(pointRoi!=null && doEnlarge) pointRoi=RoiEnlarger.enlarge(det[i].toPointRoi(), radius);
 				
 				if(color!=null) pointRoi.setStrokeColor(color);
+				
 				pointRoi.setName("Detection_"+(channel==-1?"":"Channel "+channel+" ")+"Frame "+(i+1));
 				pointRoi.setPosition(channel==-1?0:channel, 1, i+1);
 				
@@ -379,5 +393,15 @@ public class detector {
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Get saved preferences from the output GUI
+	 */
+	public static void getPrefs() {
+		doZoomIn=Prefs.get("Coloc_And_Track_doZoomIn.boolean", false);
+		zoomInValue=(int) Prefs.get("Coloc_And_Track_ZoomInValue.double", 400);
+		lineWidth=(int) Prefs.get("Coloc_And_Track_lineWidth.double", 1);
+		roiRadius=(int) Prefs.get("Coloc_And_Track_roiRadius.double", 2);
 	}
 }

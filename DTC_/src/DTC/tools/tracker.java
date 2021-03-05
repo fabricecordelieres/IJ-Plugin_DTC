@@ -1,14 +1,24 @@
 package DTC.tools;
 
 import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import DTC.tools.dataHandler.PointSerie;
 import DTC.tools.individualData.Point;
+import ij.IJ;
 import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.OvalRoi;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.RoiManager;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
 
 /**
  * This class handles tracking of individual point-like structures
@@ -27,6 +37,20 @@ public class tracker {
 	
 	/** If set, will be used to tag the outputs with color **/ 
 	static Color color=null;
+	
+	
+	/** If true, the image is zoomed in when clicking on one detection **/
+	static boolean doZoomIn=false;
+	
+	/** If doZoomIn is true, the magnification to be used when zooming in **/
+	static int zoomInValue=100;
+	
+	/** The line width for tracks display **/
+	static int lineWidth=1;
+	
+	// The circular ROI's radius when displaying individual detections **/
+	static int roiRadius=2;
+	
 	
 	/**
 	 * Resets all parameters to default (radius:2, tolerance: 16, enlarge: 0, tuning: false).
@@ -179,6 +203,8 @@ public class tracker {
 	 * @return a detections arrayList of PointSerie.
 	 */
 	public static ArrayList<PointSerie> sendTracksToRoiManager(PointSerie[] detections) {
+		getPrefs();
+		
 		ArrayList<PointSerie> tracks=doNearestNeighbor(detections);
 		
 		RoiManager rm=RoiManager.getInstance();
@@ -194,6 +220,7 @@ public class tracker {
 				if(color!=null) roi.setStrokeColor(color);
 				roi.setName("Tracking_"+(channel==-1?"":"Channel "+channel+" ")+"Frame "+(i+1));
 				roi.setPosition(channel==-1?0:channel, 1, 0);
+				roi.setStrokeWidth(lineWidth/10.0);
 				
 				rm.add((ImagePlus) null, roi, -1);
 			}
@@ -208,6 +235,8 @@ public class tracker {
 	 * @param tag a tag to filter the ROIs to select: either Coloc, Prox or NonProxColoc
 	 */
 	public static void sendTracksToRoiManager(ArrayList<ArrayList<PointSerie>> tracks, String tag) {
+		getPrefs();
+		
 		RoiManager rm=RoiManager.getInstance();
 		if(rm==null) {
 			rm=new RoiManager();
@@ -225,6 +254,7 @@ public class tracker {
 					if(color!=null) roi.setStrokeColor(detector.COLORS[channel]);
 					roi.setName("Track_"+(i+1)+(channel==-1?"":" Channel "+(channel+1)+" "));
 					roi.setPosition(channel==-1?0:channel, 1, 0);
+					roi.setStrokeWidth(lineWidth/10.0);
 					
 					if(!tag.equals("All")) {
 						if((currTag.indexOf("Coloc")!=-1 || currTag.indexOf("Prox")!=-1) && tag.equals("NonProxColoc")) roi=null;
@@ -247,11 +277,12 @@ public class tracker {
 	/**
 	 * Pushes selected tracks to the ResultsTable
 	 * @param tracks the tracks to push
-	 * @param tag a tag to filter the ROIs to select: either Coloc, Prox or NonProxColoc
+	 * @param tag a tag to filter the ROIs to select: either All, Coloc, Prox, NonProxColoc or Stats
 	 */
 	public static void sendTracksToResultsTable(ArrayList<ArrayList<PointSerie>> tracks, String tag) {
-		ResultsTable rt=new ResultsTable();
+		getPrefs();
 		
+		ResultsTable rt=new ResultsTable();
 		
 		for(int channel=0; channel<tracks.size(); channel++) {
 			for(int i=0; i<tracks.get(channel).size(); i++) {
@@ -270,6 +301,11 @@ public class tracker {
 						if((currTag.indexOf("Prox")==-1 || currTag.indexOf("Coloc")!=-1) && tag.equals("ProxOnly")) doLog=false;
 						
 						if((currTag.indexOf("Coloc")==-1 || currTag.indexOf("Prox")!=-1) && tag.equals("ColocOnly")) doLog=false;
+						
+						if(tag.equals("Stats")) {
+							tracks.get(channel).get(i).statsToResultsTable(i+1, channel+1, rt);
+							doLog=false;
+						}
 					}
 					
 					if(doLog) tracks.get(channel).get(i).toResultsTable(i+1, channel+1, rt);
@@ -277,5 +313,107 @@ public class tracker {
 			}
 		}
 		rt.show(tag);
+		
+		//Handle event
+		TextWindow tw=(TextWindow) WindowManager.getWindow(tag);
+		final TextPanel tp = tw.getTextPanel();
+		
+		tp.addMouseListener(new MouseAdapter() {
+			@Override
+            public void mouseReleased(final MouseEvent e){
+                if (!e.isConsumed()){
+                	tableEvent(tp, tag, tracks);
+                	e.consume();
+                }
+                
+            }
+		});
+		
+		tp.addKeyListener(new KeyListener() {
+					
+					@Override
+					public void keyTyped(final KeyEvent e) {
+						// TODO Auto-generated method stub
+					}
+					
+					@Override
+					public void keyReleased(final KeyEvent e) {
+						// TODO Auto-generated method stub
+					}
+					
+					@Override
+					public void keyPressed(final KeyEvent e) {
+						// TODO Auto-generated method stub
+						if (!e.isConsumed()){
+							int line = tp.getSelectionStart();
+							int lastLine=tp.getText().split("\n").length-1;
+							if(e.getKeyCode()==KeyEvent.VK_U) tp.setSelection(Math.max(0,  line-1), Math.max(0,  line-1));
+							if(e.getKeyCode()==KeyEvent.VK_D) tp.setSelection(Math.min(lastLine,  line+1), Math.min(lastLine,  line+1));
+							tableEvent(tp, tag, tracks);
+		                	e.consume();
+						}
+					}
+		});
+	}
+	
+	public static void tableEvent(TextPanel tp, String tableName, ArrayList<ArrayList<PointSerie>> tracks) {
+		getPrefs();
+		
+		Roi roi=null;
+		
+		int line = tp.getSelectionStart();
+        String selected_line=tp.getLine(line);
+        
+        String[] results_columns = selected_line.split("\\t+");
+        
+        int timepoint=tableName.indexOf("Stats")!=-1?1:Integer.parseInt(results_columns[1]);
+        int channel=tableName.indexOf("Stats")!=-1?Integer.parseInt(results_columns[1]):Integer.parseInt(results_columns[2]);
+        
+        double x=Double.parseDouble(results_columns[3]);
+        double y=Double.parseDouble(results_columns[4]);
+        
+        Color color=Color.RED;
+        if(channel==2) color=Color.GREEN;
+       
+        if(tableName.indexOf("Stats")!=-1) {
+        	int trackNb=Integer.parseInt(results_columns[0]);
+        	roi=tracks.get(channel-1).get(trackNb-1).toPolyline();
+        }else {
+	        if(selected_line.contains("Coloc")) color=Color.yellow;
+	        
+	        if(selected_line.contains("Prox")) {
+	        	if(channel==1) color=Color.MAGENTA;
+	        	if(channel==2) color=Color.CYAN;
+	        }
+	        
+	        roi=new OvalRoi(x-roiRadius, y-roiRadius, 2*roiRadius+1, 2*roiRadius+1);
+        }
+        
+        roi.setStrokeColor(color);
+        roi.setStrokeWidth(lineWidth/10.0);
+        
+        ImagePlus ip=WindowManager.getCurrentImage();
+        if(ip!=null) {
+        	ip.setPosition(channel, 1, timepoint);
+        	ip.updatePosition(channel, 1, timepoint);
+        	ip.setRoi(roi);
+        	if(doZoomIn) {
+        		if(tableName.indexOf("Stats")!=-1) {
+        			IJ.run("To Selection", "");
+        		}else{
+        			IJ.run("Set... ", "zoom="+zoomInValue+" x="+x+" y="+y);
+        		}
+        	}
+        }
+	}
+	
+	/**
+	 * Get saved preferences from the output GUI
+	 */
+	public static void getPrefs() {
+		doZoomIn=Prefs.get("Coloc_And_Track_doZoomIn.boolean", false);
+		zoomInValue=(int) Prefs.get("Coloc_And_Track_ZoomInValue.double", 400);
+		lineWidth=(int) Prefs.get("Coloc_And_Track_lineWidth.double", 1);
+		roiRadius=(int) Prefs.get("Coloc_And_Track_roiRadius.double", 2);
 	}
 }
