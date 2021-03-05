@@ -48,8 +48,8 @@ Based on user-defined distances, two types of interactions can be monitored: pro
 6. Repeat the operation for the **Channel 2** tab.
 7. Navigate to the **Colocalization** tab: this tab allows setting two parameters
 ![Coloc_tab](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Coloc.png)
-    1. **_Prox. max distance:_** (see the [Co-localization section](#co-localization))
-    2. **_Coloc. max distance:_**
+    1. **_Prox. max distance:_** this is the reference distance in pixels to be used to define that two objects, from two channels and same timepoint, are in proximity one from the other (see the [Co-localization section](#co-localization))
+    2. **_Coloc. max distance:_** this is the reference distance in pixels to be used to define that two objects, from two channels and same timepoint, are colocalized (see the [Co-localization section](#co-localization))
 
 
 ### Waiting for the analysis to complete
