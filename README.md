@@ -32,4 +32,29 @@ Based on user-defined distances, two types of interactions can be monitored: pro
 7. Restart ImageJ: the plugin should now be displayed under Plugins/Detect, Track, Co-localize
 
 ## How to use the plugin ?
+### Setting the parameters
+1. First, an image should be opened before the plugin is launched. This plugin works on a ROI: in case a ROI is present on the image, the analysis will only take place in this area.
+2. Go to **plugins/Detect, Track, Colocalize**. The GUI should pop-up:
 
+![Main_GUI](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Red.png)
+
+4. You may want to activate the _Preview_ checkbox at the bottom of the window: it will help visualizing the result when tweaking the parameters.
+5. Navigate to the **Channel 1** tab: several options are available that should be adjusted depending on the structures of interest:
+    1. **_Detection parameters, filter size:_** the radius of the filters to be applied, in pixels (see the [Detection section](#detection))
+    2. **_Detection parameters, detection tolerance:_** the tolerance of intensity to consider a pixel as a local maximum (see the [Detection section](#detection))
+    3. **_Detection parameters, re-tune detection:_** as the local maxima detection is used, the objects are approximated by the position of this individual pixel. Its coordinates are then integer values. In order to tune a bit the location, when this box is ticked, a circle will be placed around this detected point (radius equal to the filtering radius), its centre of mass will be extracted and used as the detected point. 
+    4. **_Tracking parameters, maximum displacement:_** the tracks are build by looking over time the closest point between time t and t+1 (see the [Tracking section](#tracking)). This could lead to artefactual long distance travelling when sparse objects are considered: this parameters allows retricting the search/endind a track if the coupling is occuring on a too large distance.
+    5. **_Tracking parameters, minimum number of frames:_** this parameters allows filtering out tracks for which the number of frames would be lower than this threshold value.
+6. Repeat the operation for the **Channel 2** tab.
+7. Navigate to the **Colocalization** tab: this tab allows setting two parameters
+![Coloc_tab](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Coloc.png)
+    1. **_Prox. max distance:_** (see the [Co-localization section](#co-localization))
+    2. **_Coloc. max distance:_**
+
+
+### Waiting for the analysis to complete
+While waiting for the analysis to complete, you may not be able to insteract with the image/interface. The processing has been implemented to take benefit of your full CPU capability (multi-threading) and will hopefully not take too long.
+
+
+### Using the output options
+![Output GUI](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Output.png)
