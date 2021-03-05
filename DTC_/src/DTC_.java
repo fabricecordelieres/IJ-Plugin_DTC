@@ -71,7 +71,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	@Override
 	public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 		this.pfr=pfr;
-		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v1.0.0 21-02-01");
+		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.0 21-03-05");
 		gd.setModal(false);
 		gd.setResizable(false);
 		gpl= new GUIPanel();
