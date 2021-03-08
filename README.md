@@ -34,7 +34,7 @@ Based on user-defined distances, two types of interactions can be monitored: pro
 ## How to use the plugin ?
 ### Setting the parameters
 1. First, an image should be opened before the plugin is launched. This plugin works on a ROI: in case a ROI is present on the image, the analysis will only take place in this area.
-2. Go to **plugins/Detect, Track, Colocalize**. The GUI should pop-up:
+2. Go to **plugins/Detect, Track, Colocalize**. The GUI (Graphical User interface) should pop-up:
 
 ![Main_GUI](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Red.png)
 
@@ -57,4 +57,33 @@ While waiting for the analysis to complete, you may not be able to insteract wit
 
 
 ### Using the output options
+1. Once the process is over, the Output GUI should pop-up:
+
 ![Output GUI](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Output.png)
+
+2. The interface allows setting 4 different parameters related to display and output:
+    1.**_Show tracks:_**
+        1. Show none
+        2. Show non proximal/non coloc.
+        3. Show if has >=1 non prox. tag
+        4. Show if has >=1 coloc. tag
+        5. Show prox. ONLY
+        6. Show coloc. ONLY
+        7. Show all
+    2.**_Show detections:_**
+        1. Show non proximal/non coloc.
+        2. Show proximal
+        3. Show coloc.
+    3.**_Individual detection options:_**
+        1. Zoom in
+        2. Zoom (%)
+        3. Line width (1=0.1 pix.)
+        4. Radius (pix.)
+    5.**_Exports:_**
+        1. Exports non proximal/non coloc.
+        3. Export if has >=1 non prox. tag
+        4. Export if has >=1 coloc. tag
+        5. Export prox. ONLY
+        6. Export coloc. ONLY
+        7. Export all
+        8. Export stats
