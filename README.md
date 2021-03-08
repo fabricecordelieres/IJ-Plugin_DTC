@@ -62,23 +62,21 @@ While waiting for the analysis to complete, you may not be able to insteract wit
 ![Output GUI](https://github.com/fabricecordelieres/IJ-Plugin_DTC/blob/master/images/GUI_Output.png)
 
 2. The interface allows setting 4 different parameters related to display and output:
-    1.**_Show tracks:_**
-        1. Show none
-        2. Show non proximal/non coloc.
-        3. Show if has >=1 non prox. tag
-        4. Show if has >=1 coloc. tag
-        5. Show prox. ONLY
-        6. Show coloc. ONLY
-        7. Show all
-    2.**_Show detections:_**
-        1. Show non proximal/non coloc.
-        2. Show proximal
-        3. Show coloc.
-    3.**_Individual detection options:_**
-        1. Zoom in
-        2. Zoom (%)
-        3. Line width (1=0.1 pix.)
-        4. Radius (pix.)
+    1.**_Show tracks:_** This option will push to the ROI manager the selected tracks. Each track is displayed with a color code corresponding to the channel on which the object has been tracked (Red for channel 1, Green for channel 2). Depending on the  option selected (only one can be ticked at a time); the following tracks will be displayed: none, non proximal/non coloc., if has >=1 non prox. tag, if has >=1 coloc. tag,  if all timepoints are tagged as prox. (prox. ONLY), if all timepoints are tagged as coloc. (coloc. ONLY), all.
+       
+    2.**_Show detections:_** This option will push to the ROI manager the detections selected by ticking on or more boxes (non proximal/non coloc., proximal, coloc.). The ROIs are associated to their timepoint, meaning they will appear/disappear as the user is browsing through the temporal stack. Each ROI is color coded, depending on its associated tag: single detections (non proximal/non coloc.) will appear as yellow circle, proximal detections will appear as magenta crosses, coloc. detections will appear as cyan crosses.
+       
+    3.**_Individual detection options:_** All those options are applicable to the display generated when from interactions with a results table (see below).
+    
+        a. Zoom in: When ticked, as a row gets selected in the table, the relevent detection or track will be centered on the image and zoomed in. Note that in cas the detection is close to the side of an image, the detection or track might be displayed off-centered.
+        
+        b. Zoom (%): Allows setting the zoom to be used for the zoom in option.
+        
+        c. Line width (1=0.1 pix.): Line width used to display tracks, expressed in tenth of pixels.
+        
+        d. Radius (pix.): Radius used to display detections as circular ROIs, expressed in pixels.
+        
+        
     5.**_Exports:_**
         1. Exports non proximal/non coloc.
         3. Export if has >=1 non prox. tag
