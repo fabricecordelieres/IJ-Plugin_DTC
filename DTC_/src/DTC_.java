@@ -71,7 +71,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	@Override
 	public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 		this.pfr=pfr;
-		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.0 21-03-05");
+		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.1 21-05-25");
 		gd.setModal(false);
 		gd.setResizable(false);
 		gpl= new GUIPanel();
@@ -142,6 +142,8 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	public void process() {
 		Roi roi=WindowManager.getCurrentImage().getRoi();
 		
+		WindowManager.getCurrentImage().setOverlay(null);
+		
 		ImagePlus[] imp=ChannelSplitter.split(WindowManager.getCurrentImage());
 		PointSerie[][] detections=new PointSerie[imp.length][];
 		ArrayList<ArrayList<PointSerie>> tracks=new ArrayList<ArrayList<PointSerie>>();
@@ -159,7 +161,8 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 		//Tracking
 		for(int i=0; i<detections.length; i++) {
 			tracker.setParameters(params[i][3], params[i][4], i+1, detector.COLORS[i]);
-			tracks.add(tracker.doNearestNeighbor(detections[i]));
+			tracks.add(tracker.doNearestNeighborMaximizeTrack(detections[i]));
+			//tracks.add(tracker.doNearestNeighborTimePerTime(detections[i]));
 		}
 		
 		
@@ -182,7 +185,11 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	
 	@Override
 	public void stateChanged(ChangeEvent e) {
-		if(gd.getPreviewCheckbox().getState()) preview();
+		if(gd.getPreviewCheckbox().getState()) {
+			preview();
+		}else {
+			WindowManager.getCurrentImage().setOverlay(null);
+		}
 	}
 		
 	public String getRecorderArgument() {
