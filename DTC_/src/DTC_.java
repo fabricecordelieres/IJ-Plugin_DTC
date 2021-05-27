@@ -71,7 +71,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	@Override
 	public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 		this.pfr=pfr;
-		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.1 21-05-25");
+		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.2 21-05-27");
 		gd.setModal(false);
 		gd.setResizable(false);
 		gpl= new GUIPanel();
@@ -97,6 +97,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	/**
 	 * This function allows previewing the effects of the current parameters on detection and co-localization
 	 */
+	@SuppressWarnings("static-access")
 	public void preview() {
 		if(gd.isPreviewActive()) {
 			params=gpl.getValues();
@@ -129,7 +130,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 			imp.setRoi(roi);
 			
 			//Preview colocalization
-			colocalizer.setParameters(params[2][0], params[2][1]);
+			colocalizer.setParameters(params[2][1], params[2][2]);
 			colocalizer.previewColoc(prevDetections[0], prevDetections[1], new double[]{params[0][0], params[1][0]});
 			
 			imp.addImageListener(this);
@@ -155,14 +156,13 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 		}
 		
 		//Coloc
-		colocalizer.setParameters(params[2][0], params[2][1]);
+		colocalizer.setParameters(params[2][1], params[2][2]);
 		colocalizer.tag(detections);
 
 		//Tracking
 		for(int i=0; i<detections.length; i++) {
 			tracker.setParameters(params[i][3], params[i][4], i+1, detector.COLORS[i]);
-			tracks.add(tracker.doNearestNeighborMaximizeTrack(detections[i]));
-			//tracks.add(tracker.doNearestNeighborTimePerTime(detections[i]));
+			tracks.add(tracker.doNearestNeighborMaximizeTrack(detections[i], params[2][0]));
 		}
 		
 		
@@ -200,7 +200,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 			for(int j=0; j<categories.length; j++) out+=categories[j]+"_C"+(i+1)+"="+params[i][j]+" ";
 		}
 		
-		out+="proximity="+params[2][0]+" coloc="+params[2][1];
+		out+="track="+params[2][0]+" proximity="+params[2][1]+" coloc="+params[2][2];
 		
 		return out;
 	}

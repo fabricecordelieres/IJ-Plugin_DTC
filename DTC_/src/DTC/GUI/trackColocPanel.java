@@ -15,7 +15,10 @@ import javax.swing.SpinnerNumberModel;
 /**
  * This class handles the part of GUI dedicated to getting the proximity/co-localization parameters
  */
-public class colocPanel extends JPanel implements ChangeListener{
+public class trackColocPanel extends JPanel implements ChangeListener{
+	/** Number of tracking rounds **/
+	int trackRounds=10;
+	
 	/** Maximum number of pixels two detections should be separated apart to be considered as at proximity **/
 	int maxProximity=6;
 	
@@ -26,45 +29,66 @@ public class colocPanel extends JPanel implements ChangeListener{
 	private static final long serialVersionUID = 1L;
 	private JSpinner spinnerProximity;
 	private JSpinner spinnerColoc;
+	private JSpinner spinnerTrack;
 	
 	/**
 	 * Creates a new panel for proximity/co-localization parameters input
 	 */
-	public colocPanel() {
+	public trackColocPanel() {
 		getPrefs();
 		
 		SpringLayout springLayout = new SpringLayout();
 		setLayout(springLayout);
 		
+		JLabel lblTrackParam = new JLabel("Tracking parameters");
+		springLayout.putConstraint(SpringLayout.NORTH, lblTrackParam, 20, SpringLayout.NORTH, this);
+		springLayout.putConstraint(SpringLayout.WEST, lblTrackParam, 15, SpringLayout.WEST, this);
+		lblTrackParam.setFont(new Font("Lucida Grande", Font.BOLD | Font.ITALIC, 13));
+		add(lblTrackParam);
+		
+		JLabel lblTrack = new JLabel("Tracking rounds");
+		springLayout.putConstraint(SpringLayout.NORTH, lblTrack, 15, SpringLayout.SOUTH, lblTrackParam);
+		springLayout.putConstraint(SpringLayout.WEST, lblTrack, 10, SpringLayout.WEST, lblTrackParam);
+		add(lblTrack);
+		
+		spinnerTrack = new JSpinner();
+		springLayout.putConstraint(SpringLayout.NORTH, spinnerTrack, -5, SpringLayout.NORTH, lblTrack);
+		SpinnerModel modelTrack = new SpinnerNumberModel(trackRounds, 0, 65535, 1);
+		spinnerTrack.setModel(modelTrack);
+		spinnerTrack.addChangeListener(this);
+		add(spinnerTrack);
+		
 		JLabel lblColocParam = new JLabel("Co-localization parameters");
-		springLayout.putConstraint(SpringLayout.WEST, lblColocParam, 48, SpringLayout.WEST, this);
+		springLayout.putConstraint(SpringLayout.NORTH, lblColocParam, 50, SpringLayout.SOUTH, lblTrack);
+		springLayout.putConstraint(SpringLayout.WEST, lblColocParam, 0, SpringLayout.WEST, lblTrackParam);
 		add(lblColocParam);
 		lblColocParam.setFont(new Font("Lucida Grande", Font.BOLD | Font.ITALIC, 13));
 		
 		JLabel lblProximity = new JLabel("Proximity: max. distance (pixels)");
-		springLayout.putConstraint(SpringLayout.NORTH, lblProximity, 86, SpringLayout.NORTH, this);
-		springLayout.putConstraint(SpringLayout.WEST, lblProximity, 10, SpringLayout.WEST, this);
+		springLayout.putConstraint(SpringLayout.WEST, spinnerTrack, 15, SpringLayout.EAST, lblProximity);
+		springLayout.putConstraint(SpringLayout.EAST, spinnerTrack, 75, SpringLayout.EAST, lblProximity);
+		springLayout.putConstraint(SpringLayout.NORTH, lblProximity, 15, SpringLayout.SOUTH, lblColocParam);
+		springLayout.putConstraint(SpringLayout.WEST, lblProximity, 10, SpringLayout.WEST, lblColocParam);
 		add(lblProximity);
 		
 		spinnerProximity = new JSpinner();
-		springLayout.putConstraint(SpringLayout.NORTH, spinnerProximity, 81, SpringLayout.NORTH, this);
-		springLayout.putConstraint(SpringLayout.SOUTH, lblColocParam, -17, SpringLayout.NORTH, spinnerProximity);
-		springLayout.putConstraint(SpringLayout.WEST, spinnerProximity, 6, SpringLayout.EAST, lblProximity);
-		springLayout.putConstraint(SpringLayout.EAST, spinnerProximity, -10, SpringLayout.EAST, this);
+		springLayout.putConstraint(SpringLayout.NORTH, spinnerProximity, -5, SpringLayout.NORTH, lblProximity);
+		springLayout.putConstraint(SpringLayout.WEST, spinnerProximity, 0, SpringLayout.WEST, spinnerTrack);
+		springLayout.putConstraint(SpringLayout.EAST, spinnerProximity, 0, SpringLayout.EAST, spinnerTrack);
 		SpinnerModel modelProximity = new SpinnerNumberModel(maxProximity, 0, 65535, 1);    
 		spinnerProximity.setModel(modelProximity);
 		spinnerProximity.addChangeListener(this);
 		add(spinnerProximity);
 		
 		JLabel lblColoc = new JLabel("Coloc: max. distance (pixels)");
+		springLayout.putConstraint(SpringLayout.NORTH, lblColoc, 10, SpringLayout.SOUTH, lblProximity);
 		springLayout.putConstraint(SpringLayout.WEST, lblColoc, 0, SpringLayout.WEST, lblProximity);
 		add(lblColoc);
 		
 		spinnerColoc = new JSpinner();
-		springLayout.putConstraint(SpringLayout.WEST, spinnerColoc, 31, SpringLayout.EAST, lblColoc);
-		springLayout.putConstraint(SpringLayout.EAST, spinnerColoc, -10, SpringLayout.EAST, this);
-		springLayout.putConstraint(SpringLayout.NORTH, lblColoc, 5, SpringLayout.NORTH, spinnerColoc);
-		springLayout.putConstraint(SpringLayout.NORTH, spinnerColoc, 6, SpringLayout.SOUTH, spinnerProximity);
+		springLayout.putConstraint(SpringLayout.NORTH, spinnerColoc, -5, SpringLayout.NORTH, lblColoc);
+		springLayout.putConstraint(SpringLayout.WEST, spinnerColoc, 0, SpringLayout.WEST, spinnerTrack);
+		springLayout.putConstraint(SpringLayout.EAST, spinnerColoc, 0, SpringLayout.EAST, spinnerTrack);
 		SpinnerModel modelColoc = new SpinnerNumberModel(maxColoc, 0, 65535, 1);    
 		spinnerColoc.setModel(modelColoc);
 		spinnerColoc.addChangeListener(this);
@@ -75,6 +99,7 @@ public class colocPanel extends JPanel implements ChangeListener{
 	 * Reads the stored parameters and uses them as default values
 	 */
 	public void getPrefs() {
+		trackRounds=(int) Prefs.get("Coloc_And_Track_track.double", 10);
 		maxProximity=(int) Prefs.get("Coloc_And_Track_proximity.double", 6);
 		maxColoc=(int) Prefs.get("Coloc_And_Track_coloc.double", 3);
 	}
@@ -83,8 +108,17 @@ public class colocPanel extends JPanel implements ChangeListener{
 	 * Stores parameters displayed within the panel
 	 */
 	public void storePreferences() {
+		Prefs.set("Coloc_And_Track_track.double", (int) spinnerTrack.getValue());
 		Prefs.set("Coloc_And_Track_proximity.double", (int) spinnerProximity.getValue());
 		Prefs.set("Coloc_And_Track_coloc.double", (int) spinnerColoc.getValue());
+	}
+	
+	/**
+	 * Retrieves the tracking rounds parameter
+	 * @return the tracking rounds parameter
+	 */
+	public int getTrackRound() {
+		return (int) spinnerTrack.getValue();
 	}
 	
 	/**
@@ -108,13 +142,14 @@ public class colocPanel extends JPanel implements ChangeListener{
 	 * @return all the values as an array of integers
 	 */
 	public int[] getValues() {
-		return new int[] {(int) spinnerProximity.getValue(), (int) spinnerColoc.getValue()};
+		return new int[] {(int) spinnerTrack.getValue(), (int) spinnerProximity.getValue(), (int) spinnerColoc.getValue()};
 	}
 	
 	@Override
 	public void stateChanged(ChangeEvent e) {
 		for (ChangeListener listener : getChangeListeners()) {
-			String source="_Coloc_Tab";
+			String source="_trackColoc_Tab";
+			if(e.getSource().equals(spinnerTrack)) source="Track"+source;
 			if(e.getSource().equals(spinnerProximity)) source="Proximity"+source;
 			if(e.getSource().equals(spinnerColoc)) source="Coloc"+source;
 			

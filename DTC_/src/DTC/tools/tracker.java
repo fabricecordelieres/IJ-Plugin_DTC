@@ -115,119 +115,77 @@ public class tracker {
 	 * Performs nearest neighbor-based tracking on the input array of PointSerie (one time point per cell).
 	 * Tracking is performed cell by cell, for each cell in turn trying to grab as many time points as possible in one shot.
 	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
+	 * @param maxRounds number of successive tracking sequences to be applied: increasing the number may help catch static structures in a crowded environment
 	 * @return an array list of PointSerie, each element being a track.
 	 */
-	public static ArrayList<PointSerie> doNearestNeighborMaximizeTrack(PointSerie[] detections) {
+	public static ArrayList<PointSerie> doNearestNeighborMaximizeTrack(PointSerie[] detections, int maxRounds) {
 		//Required to keep the content of "detections" untouched: direct cloning doesn't work...
 		PointSerie[] toAnalyze=new PointSerie[detections.length];
 		for(int i=0; i<detections.length; i++) toAnalyze[i]=detections[i].clone();
 		
 		
 		ArrayList<PointSerie> tracks=new ArrayList<PointSerie>();
+		boolean stopRound=false;
 		
-		for(int i=0; i<toAnalyze.length-1; i++) {
-			//Get all points from the current timepoint
-			PointSerie currPool=toAnalyze[i];
-			
-			for(int j=0; j<currPool.getNPoints(); j++) {
-				//Get the current point to test
-				Point currPoint=currPool.getPoint(j);
+		
+		for(int nRounds=1; nRounds<=maxRounds; nRounds++) {
+		
+			for(int i=0; i<toAnalyze.length-1; i++) {
+				//Get all points from the current timepoint
+				PointSerie currPool=toAnalyze[i];
 				
-				//Add it to a temporary track
-				PointSerie tmpTrack=new PointSerie(currPoint);
-				tmpTrack.setTag(currPoint.getTag());
-				
-				for(int k=i+1; k<toAnalyze.length; k++) {
-					PointSerie nextPool=toAnalyze[k];
+				for(int j=0; j<currPool.getNPoints(); j++) {
+					stopRound=false;
 					
-					//Get the closest point
-					float[] data=getClosestPoint(currPoint, nextPool);
+					//Get the current point to test
+					Point currPoint=currPool.getPoint(j);
 					
-					//If found, add to the tmp track and removes it from the pool
-					if(data!=null) {
-						if(data[1]<=maxDistance) {
-							//Set the current PointRoi to the one we have just found
-							currPoint=nextPool.getPoint((int) data[0]);
-							
-							//Add it to a temporary track
-							tmpTrack.add(currPoint);
-							
-							//Tag the track
-							tmpTrack.setTag(tmpTrack.getTag()+"\t"+currPoint.getTag());
-							
-							//Remove the closest point from t+1 (nextPool, but on original data) and reset the counter !!!
-							toAnalyze[k].remove((int) data[0]);
-						}else {
-							j=currPool.getNPoints();
-							k=toAnalyze.length;
-						}
-					}else {
-						j=currPool.getNPoints();
-						k=toAnalyze.length;
-					}
-				}
-				
-				//Adds the tmpTrack to tracks if long enough
-				if(tmpTrack.getNPoints()>minTrackedFrames) {
-					tmpTrack.setName("Track_"+(tracks.size()+1));
-					tracks.add(tmpTrack);
-				}
-			}
-		}
-		return tracks;
-	}
-	
-	/**
-	 * Performs nearest neighbor-based tracking on the input array of PointSerie (one time point per cell).
-	 * Tracking is performed cell by cell, for each timepoint trying to link each cell to the closest one on the next timepoint.
-	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
-	 * @return an array list of PointSerie, each element being a track.
-	 */
-	public static ArrayList<PointSerie> doNearestNeighborTimePerTime(PointSerie[] detections) {
-		//First step: duplicate the detection lists to be able to remove connected detections over time
-		PointSerie[] toAnalyze=new PointSerie[detections.length];
-		for(int i=0; i<detections.length; i++) toAnalyze[i]=detections[i].clone();
-		
-		//Second step: initialize output tracks using the detections at first timepoint
-		ArrayList<PointSerie> tracks=new ArrayList<PointSerie>();
-		
-		for(int i=0; i<toAnalyze[0].getNPoints(); i++) tracks.add(new PointSerie(toAnalyze[0].getPoint(i)));
-		
-		
-		//Keeps track of ended tracks
-		boolean[] isEnded=new boolean[tracks.size()];
-		Arrays.fill(isEnded, false);
-		
-		//Third step: for each detection, try to connect to next point timepoint detections
-		for(int i=1; i<toAnalyze.length; i++) { 
-			for(int j=0; j<tracks.size(); j++) {
-				if(!isEnded[j]) {
-					//Get the last detection on the track
-					Point lastDetection=tracks.get(j).getPoint(tracks.get(j).getNPoints()-1);
+					//Add it to a temporary track
+					PointSerie tmpTrack=new PointSerie(currPoint);
+					tmpTrack.setTag(currPoint.getTag());
 					
-					//Get the closest point between the last detection of the track and all detections in the next timepoint
-						float[] data=getClosestPoint(lastDetection, toAnalyze[i]);
+					for(int k=i+1; k<toAnalyze.length; k++) {
+						PointSerie nextPool=toAnalyze[k];
+						
+						//Get the closest point
+						float[] data=getClosestPoint(currPoint, nextPool);
+						
 						//If found, add to the tmp track and removes it from the pool
 						if(data!=null) {
 							if(data[1]<=maxDistance) {
 								//Set the current PointRoi to the one we have just found
-								tracks.get(j).add(toAnalyze[i].getPoint((int) data[0]));
+								currPoint=nextPool.getPoint((int) data[0]);
+								
+								//Add it to a temporary track
+								tmpTrack.add(currPoint);
 								
 								//Tag the track
-								tracks.get(j).setTag(tracks.get(j).getTag()+"\t"+toAnalyze[i].getPoint((int) data[0]).getTag());
+								tmpTrack.setTag(tmpTrack.getTag()+"\t"+currPoint.getTag());
 								
-								//Remove the closest point from t+1
-								toAnalyze[i].remove((int) data[0]);
+								//Remove the closest point from t+1 (nextPool, but on original data) and reset the counter !!!
+								toAnalyze[k].remove((int) data[0]);
 							}else {
-								isEnded[j]=true;
+								stopRound=true;
+								k=toAnalyze.length;
 							}
 						}else {
-							isEnded[j]=true;
+							stopRound=true;
+							k=toAnalyze.length;
 						}
+					}
+					
+					//Adds the tmpTrack to tracks if long enough
+					if(tmpTrack.getNPoints()>minTrackedFrames) {
+						tmpTrack.setName("Track_"+(tracks.size()+1));
+						tracks.add(tmpTrack);
+						toAnalyze[i].remove(j); //removes the first point as it also belongs to the track
+					}
+					
+					//
+					if(stopRound)  j=currPool.getNPoints();
 				}
 			}
 		}
-		
 		
 		return tracks;
 	}
@@ -258,15 +216,14 @@ public class tracker {
 	
 	/**
 	 * Pushes all the tracks to the ROI Manager and returns them as a arrayList of PointSerie.
-	 * @param ip the ImagePlus on which detection has to be performed.
-	 * @param channel the channel number, to tag all ROIs.
-	 * @param color the color of the output ROIs.
-	 * @return a detections arrayList of PointSerie.
+	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
+	 * @param maxRounds number of successive tracking sequences to be applied: increasing the number may help catch static structures in a crowded environment
+	 * @return an array list of PointSerie, each element being a track.
 	 */
-	public static ArrayList<PointSerie> sendTracksToRoiManager(PointSerie[] detections) {
+	public static ArrayList<PointSerie> sendTracksToRoiManager(PointSerie[] detections, int maxRounds) {
 		getPrefs();
 		
-		ArrayList<PointSerie> tracks=doNearestNeighborMaximizeTrack(detections);
+		ArrayList<PointSerie> tracks=doNearestNeighborMaximizeTrack(detections, maxRounds);
 		
 		RoiManager rm=RoiManager.getInstance();
 		if(rm==null) {
