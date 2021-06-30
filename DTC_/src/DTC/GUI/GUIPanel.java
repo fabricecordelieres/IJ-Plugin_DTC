@@ -23,7 +23,7 @@ public class GUIPanel extends JPanel implements ChangeListener{
 	private paramPanel paramPanel_C2;
 	
 	/** Proximity/co-localization parameters panel **/
-	private trackColocPanel trackColocPanel;
+	private colocPanel colocPanel;
 
 	/**
 	 * Creates the panel
@@ -55,21 +55,21 @@ public class GUIPanel extends JPanel implements ChangeListener{
 		tabbedPane.addTab("Channel 2", null, paramPanel_C2, null);
 		tabbedPane.setBackgroundAt(1, Color.GREEN);
 		
-		trackColocPanel = new trackColocPanel();
-		trackColocPanel.addChangeListener(this);
-		trackColocPanel.setBackground(new Color(255, 255, 196));
-		tabbedPane.addTab("Track/Co-localize", null, trackColocPanel, null);
+		colocPanel = new colocPanel();
+		colocPanel.addChangeListener(this);
+		colocPanel.setBackground(new Color(255, 255, 196));
+		tabbedPane.addTab("Track/Co-localize", null, colocPanel, null);
 		tabbedPane.setBackgroundAt(2, Color.YELLOW);
 	}
 	
 	public void storePreferences() {
 		paramPanel_C1.storePreferences();
 		paramPanel_C2.storePreferences();
-		trackColocPanel.storePreferences();
+		colocPanel.storePreferences();
 	}
 	
 	public int[][] getValues() {
-		return new int[][] {paramPanel_C1.getValues(), paramPanel_C2.getValues(), trackColocPanel.getValues()};
+		return new int[][] {paramPanel_C1.getValues(), paramPanel_C2.getValues(), colocPanel.getValues()};
 	}
 
 	@Override

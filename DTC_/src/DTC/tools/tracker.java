@@ -6,8 +6,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import DTC.tools.dataHandler.PointSerie;
 import DTC.tools.individualData.Point;
 import ij.IJ;
@@ -115,10 +113,74 @@ public class tracker {
 	 * Performs nearest neighbor-based tracking on the input array of PointSerie (one time point per cell).
 	 * Tracking is performed cell by cell, for each cell in turn trying to grab as many time points as possible in one shot.
 	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
+	 * @return an array list of PointSerie, each element being a track.
+	 */
+	public static ArrayList<PointSerie> doNearestNeighborMaximizeTrack(PointSerie[] detections) {
+		//Required to keep the content of "detections" untouched: direct cloning doesn't work...
+		PointSerie[] toAnalyze=new PointSerie[detections.length];
+		for(int i=0; i<detections.length; i++) toAnalyze[i]=detections[i].clone();
+		
+		
+		ArrayList<PointSerie> tracks=new ArrayList<PointSerie>();
+		
+		//Loop for all tracks, making them start at TP 0 then 1, then 2 etc
+		for(int i=0; i<toAnalyze.length-1; i++) {
+			for(int j=0; j<toAnalyze[i].getNPoints(); j++) {
+				//Get the current point to test
+				Point currPoint=toAnalyze[i].getPoint(j);
+				
+				//Add it to a temporary track
+				PointSerie tmpTrack=new PointSerie(currPoint);
+				tmpTrack.setTag(currPoint.getTag());
+				
+				for(int k=i+1; k<toAnalyze.length; k++) {
+					PointSerie nextPool=toAnalyze[k];
+					
+					//Get the closest point
+					float[] data=getClosestPoint(currPoint, nextPool);
+					
+					//If found, add to the tmp track and removes it from the pool
+					if(data!=null) {
+						if(data[1]<=maxDistance) {
+							//Set the current PointRoi to the one we have just found
+							currPoint=nextPool.getPoint((int) data[0]);
+							
+							//Add it to a temporary track
+							tmpTrack.add(currPoint);
+							
+							//Tag the track
+							tmpTrack.setTag(tmpTrack.getTag()+"\t"+currPoint.getTag());
+							
+							//Remove the closest point from t+1 (nextPool, but on original data) and reset the counter !!!
+							toAnalyze[k].remove((int) data[0]);
+						}else {
+							k=toAnalyze.length;
+						}
+					}else {
+						k=toAnalyze.length;
+					}
+				}
+				
+				//Adds the tmpTrack to tracks if long enough
+				if(tmpTrack.getNPoints()>=minTrackedFrames) {
+					tmpTrack.setName("Track_"+(tracks.size()+1));
+					tracks.add(tmpTrack);
+					toAnalyze[i].remove(j); //removes the first point as it also belongs to the track
+					j--;
+				}
+			}
+		}
+		return tracks;
+	}
+	
+	/**
+	 * Performs nearest neighbor-based tracking on the input array of PointSerie (one time point per cell).
+	 * Tracking is performed cell by cell, for each cell in turn trying to grab as many time points as possible in one shot.
+	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
 	 * @param maxRounds number of successive tracking sequences to be applied: increasing the number may help catch static structures in a crowded environment
 	 * @return an array list of PointSerie, each element being a track.
 	 */
-	public static ArrayList<PointSerie> doNearestNeighborMaximizeTrack(PointSerie[] detections, int maxRounds) {
+	public static ArrayList<PointSerie> doNearestNeighborMaximizeTrackOld(PointSerie[] detections, int maxRounds) {
 		//Required to keep the content of "detections" untouched: direct cloning doesn't work...
 		PointSerie[] toAnalyze=new PointSerie[detections.length];
 		for(int i=0; i<detections.length; i++) toAnalyze[i]=detections[i].clone();
@@ -217,13 +279,12 @@ public class tracker {
 	/**
 	 * Pushes all the tracks to the ROI Manager and returns them as a arrayList of PointSerie.
 	 * @param detections detections to link between frames, as an array of PointSerie (one time point per cell).
-	 * @param maxRounds number of successive tracking sequences to be applied: increasing the number may help catch static structures in a crowded environment
 	 * @return an array list of PointSerie, each element being a track.
 	 */
-	public static ArrayList<PointSerie> sendTracksToRoiManager(PointSerie[] detections, int maxRounds) {
+	public static ArrayList<PointSerie> sendTracksToRoiManager(PointSerie[] detections) {
 		getPrefs();
 		
-		ArrayList<PointSerie> tracks=doNearestNeighborMaximizeTrack(detections, maxRounds);
+		ArrayList<PointSerie> tracks=doNearestNeighborMaximizeTrack(detections);
 		
 		RoiManager rm=RoiManager.getInstance();
 		if(rm==null) {

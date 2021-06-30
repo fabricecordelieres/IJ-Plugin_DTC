@@ -71,7 +71,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 	@Override
 	public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
 		this.pfr=pfr;
-		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.2 21-05-27");
+		gd=new GenericDialog("Detect, Track, Colocalize - fabrice.cordelieres@gmail.com - v2.0.3 21-06-30");
 		gd.setModal(false);
 		gd.setResizable(false);
 		gpl= new GUIPanel();
@@ -130,7 +130,7 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 			imp.setRoi(roi);
 			
 			//Preview colocalization
-			colocalizer.setParameters(params[2][1], params[2][2]);
+			colocalizer.setParameters(params[2][0], params[2][1]);
 			colocalizer.previewColoc(prevDetections[0], prevDetections[1], new double[]{params[0][0], params[1][0]});
 			
 			imp.addImageListener(this);
@@ -156,13 +156,13 @@ public class DTC_ implements ExtendedPlugInFilter, DialogListener, ChangeListene
 		}
 		
 		//Coloc
-		colocalizer.setParameters(params[2][1], params[2][2]);
+		colocalizer.setParameters(params[2][0], params[2][1]);
 		colocalizer.tag(detections);
 
 		//Tracking
 		for(int i=0; i<detections.length; i++) {
 			tracker.setParameters(params[i][3], params[i][4], i+1, detector.COLORS[i]);
-			tracks.add(tracker.doNearestNeighborMaximizeTrack(detections[i], params[2][0]));
+			tracks.add(tracker.doNearestNeighborMaximizeTrack(detections[i]));
 		}
 		
 		
